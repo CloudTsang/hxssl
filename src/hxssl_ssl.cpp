@@ -1,6 +1,11 @@
 
+#ifndef STATIC_LINK
 #define IMPLEMENT_API
+#endif
+
+#if defined(HX_WINDOWS) || defined(HX_MACOS) || defined(HX_LINUX)
 #define NEKO_COMPATIBLE
+#endif
 
 #include <hx/CFFI.h>
 #include <stdio.h>
@@ -335,7 +340,7 @@ static value hxssl_BIO_NOCLOSE() {
 }
 
 static value hxssl_BIO_new_socket( value sock, value close_flag ) {
-	int sock_ = ((int_val) val_data(sock) );
+	int sock_ = ((intptr_t) val_data(sock) );
 	BIO* bio = BIO_new_socket( sock_, val_int(close_flag) );
 	return alloc_abstract( k_BIO, bio );
 }
@@ -492,7 +497,7 @@ static value hxssl_SSL_accept( value ssl, value sock ) {
 	SSL* _ssl = val_ssl( ssl );
 	if( _ssl == NULL )
 		neko_error();
-	int _sock = ((int_val) val_data(sock) );
+	int _sock = ((intptr_t) val_data(sock) );
 	if( !SSL_set_fd( _ssl, _sock ) )
 	    neko_error();
 	if( SSL_accept( _ssl ) < 0 )

@@ -1,5 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+   <!--
+      Build with:
+         -Diphonesim              -> build i386 version
+         -Diphoneos               -> build armv6
+         -Diphoneos -DHXCPP_ARMV7 -> build armv7
+         -Dandroid                -> build android armv5
+         -Dandroid  -DHXCPP_ARMV7 -> build android armv7
+         -Dandroid  -DHXCPP_X86   -> build android x86
+         - no defines             -> build current OS
+         -DHXCPP_M64              -> build current OS, 64 but version
+         -Ddebug                  -> Used in combination with above for debug
+   -->
+
 <!-- hxssl -->
 
 <xml>
@@ -8,6 +21,19 @@
 
 	<set name="DBG" value="d" if="debug" />
 	<set name="ROOT" value="../" unless="ROOT"/>
+
+    <set name="LIBNAME" value="hxssl" />
+    <set name="SLIBEXT" value=".lib" if="windows" />
+    <set name="SLIBEXT" value=".a" unless="windows" />
+    <set name="SHLIBEXT" value=".dll" if="windows" />
+    <set name="SHLIBEXT" value=".so" unless="windows" />
+    <set name="SHLIBEXT" value=".dylib" if="mac || iphone" />
+    <set name="DEBUGEXTRA" value="" />
+    <set name="DEBUGEXTRA" value="" if="static_link" />
+
+    <set name="PRELIB" value="lib/${BINDIR}/${LIBPREFIX}" />
+    <set name="POSTLIB" value="${DBG}${LIBEXTRA}${SLIBEXT}" />
+    <set name="POSTSHAREDLIB" value="${DBG}${LIBEXTRA}${SHLIBEXT}" />
 
 	<files id="files">
 		<file name="hxssl_ssl.cpp"/>
@@ -18,15 +44,39 @@
 		<file name="hxssl_ripemd.cpp"/>
 	</files>
 
-	<target id="hxssl.ndll" tool="linker" toolid="dll" output="hxssl">
-		
-		<ext value=".ndll"/>
+	<files id="iphone">
+        <depend name="${HXCPP}/include/hx/Macros.h" />
+        <depend name="${HXCPP}/include/hx/CFFI.h" />
+
+		<compilerflag value="-I../dependencies/ios-openssl/include" />
+
+		<file name="hxssl_ssl.cpp"/>
+		<file name="hxssl_md5.cpp"/>
+		<file name="hxssl_base64.cpp"/>
+		<file name="hxssl_sha1.cpp"/>
+		<file name="hxssl_sha256.cpp"/>
+		<file name="hxssl_ripemd.cpp"/>
+	</files>
+
+	<target id="hxssl.ndll" tool="linker" toolid="${STD_MODULE_LINK}" output="${LIBPREFIX}${LIBNAME}${DEBUGEXTRA}${LIBEXTRA}">
+
+		<section unless="static_link">
+
+            <ext value=".so" />
+            <ext value=".ndll" if="windows || mac || linux" />
+
+        </section>
+
+		<ext value=".ndll" unless="iphone || android"/>
 		<outdir name="../ndll/${BINDIR}"/>
 		<flag value="${LIB_DIR}"/>
-		<files id="files"/>
-		
-		<lib name="-lssl"/>
-		<lib name="-lcrypto"/>
+		<files id="iphone" if="iphone"/>
+		<files id="files" unless="iphone"/>
+
+		<lib name="../dependencies/ios-openssl/lib/libssl.a" if="iphone"/>
+		<lib name="../dependencies/ios-openssl/lib/libcrypto.a" if="iphone"/>
+		<lib name="-lssl" unless="iphone"/>
+		<lib name="-lcrypto" unless="iphone"/>
 
 		<lib name="libeay32MT.lib" if="windows" />
 		<lib name="ssleay32MT.lib" if="windows" />
@@ -34,7 +84,7 @@
 		<lib name="Advapi32.lib" if="windows" />
 		<lib name="Gdi32.lib" if="windows" />
 		<lib name="User32.lib" if="windows" />
-		
+
 	</target>
 
 	<target id="default">
