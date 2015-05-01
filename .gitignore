@@ -9,3 +9,5 @@ _*
 *.csr
 *.key
 */all_objs
+.DS_Store
+src/obj
