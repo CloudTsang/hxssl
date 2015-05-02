@@ -20,7 +20,7 @@
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
 
-#ifdef _MSC_VER 
+#ifdef _MSC_VER
 #define strcasecmp _stricmp
 #define strncasecmp _strnicmp
 #endif
@@ -169,14 +169,14 @@ static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx) {
 
 // HostnameValidation based on https://github.com/iSECPartners/ssl-conservatory
 // Wildcard cmp based on libcurl hostcheck
-static HostnameValidationResult hxssl_match_hostname( const ASN1_STRING *asn1, const char *hostname ){	
+static HostnameValidationResult hxssl_match_hostname( const ASN1_STRING *asn1, const char *hostname ){
 	char *pattern, *wildcard, *pattern_end, *hostname_end;
 	int prefixlen, suffixlen;
 	if( asn1 == NULL )
 		return Error;
 
 	pattern = (char *)ASN1_STRING_data((ASN1_STRING *)asn1);
-	
+
 	if( ASN1_STRING_length((ASN1_STRING *)asn1) != strlen(pattern) ){
 		return MalformedCertificate;
 	}else{
@@ -186,7 +186,7 @@ static HostnameValidationResult hxssl_match_hostname( const ASN1_STRING *asn1, c
 				return MatchFound;
 			return MatchNotFound;
 		}
-		pattern_end = strchr(pattern, '.');	
+		pattern_end = strchr(pattern, '.');
 		if( pattern_end == NULL || strchr(pattern_end+1,'.') == NULL || wildcard > pattern_end || strncasecmp(pattern,"xn--",4)==0 )
 			return MatchNotFound;
 		hostname_end = strchr((char *)hostname, '.');
@@ -234,7 +234,7 @@ static HostnameValidationResult hxssl_matches_common_name(const X509 *server_cer
 	int cn_loc = -1;
 	X509_NAME_ENTRY *cn_entry = NULL;
 
-	
+
 	cn_loc = X509_NAME_get_index_by_NID(X509_get_subject_name((X509 *)server_cert), NID_commonName, -1);
 	if( cn_loc < 0 )
 		return Error;
@@ -256,9 +256,9 @@ static value hxssl_validate_hostname( value ssl, value hostname ){
 		neko_error();
 
 	result = hxssl_matches_subject_alternative_name(server_cert, name);
-	if (result == NoSANPresent) 
+	if (result == NoSANPresent)
 		result = hxssl_matches_common_name(server_cert, name);
-	
+
 	if( result == MatchFound )
 		return alloc_null();
 
@@ -316,13 +316,13 @@ static value hxssl_SSL_CTX_set_session_id_context( value ctx, value sid ) {
 static int hxssl_ssl_servername_cb(SSL *ssl, int *ad, void *arg){
 	AutoGCRoot *p = (AutoGCRoot *)arg;
 	const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-	
+
 	if( servername && p != 0 ){
 	 	value ret = val_call1(p->get(), alloc_string(servername)) ;
 		if( !val_is_null(ret) )
 			SSL_set_SSL_CTX( ssl, val_ctx(ret) );
 	}
-	
+
 	return SSL_TLSEXT_ERR_OK;
 }
 
@@ -428,7 +428,7 @@ static value hxssl_SSL_recv_char(value ssl) {
 
 
 static  value hxssl___SSL_read( value ssl ) {
-	
+
 	/*
 	buffer b;
 	int bufsize = 256; //TODO buffer size
@@ -446,7 +446,7 @@ static  value hxssl___SSL_read( value ssl ) {
 	}
 	return buffer_to_string(b);
 	*/
-	
+
 	int bufsize = 256;
 	buffer b;
 	char buf[256];
@@ -545,3 +545,14 @@ DEFINE_PRIM( hxssl___SSL_write, 2 );
 
 DEFINE_PRIM( hxssl___SSL_accept, 1 );
 DEFINE_PRIM( hxssl_SSL_accept, 2 );
+
+// Entry point
+extern "C" void hxssl_entry_point() {
+    val_int(0);
+}
+DEFINE_ENTRY_POINT(hxssl_entry_point);
+
+extern "C" int hxssl_register_prims() {
+    hxssl_entry_point();
+    return 0;
+}
